@@ -2,7 +2,9 @@
 
 Production-oriented Raft protocol implementation in Go.
 
-![Raft Core Protocol UI](https://github.com/user-attachments/assets/64765766-b1e2-4fa6-8e77-de33b8ec31b6)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/64765766-b1e2-4fa6-8e77-de33b8ec31b6" alt="Raft Core Protocol UI" width="760" />
+</p>
 
 This repository contains only consensus protocol code and protocol tests:
 
@@ -43,4 +45,4 @@ Run node locally:
 
 ## License
 
-Add your preferred license file before public release.
+MIT. See [LICENSE](LICENSE).
