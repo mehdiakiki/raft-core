@@ -33,6 +33,19 @@ make build
 make test
 ```
 
+## Make targets
+
+- `make doctor` - verify required toolchain (`go`, `protoc`).
+- `make proto` - regenerate protobuf and gRPC Go stubs from `proto/raft/raft.proto`.
+- `make build` - compile the node binary to `bin/node`.
+- `make test` - run all tests (`test-unit` + `test-integration`).
+- `make test-unit` - run unit tests for raft/storage with race detection.
+- `make test-integration` - run integration tests with a timeout guard.
+- `make lint` - run static checks via `go vet`.
+- `make help` - list available targets.
+
+Implementation note: Go targets use a local cache directory (`.cache/go-build`) for repeatable local/CI behavior.
+
 Run node locally:
 
 ```bash
