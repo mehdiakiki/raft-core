@@ -2,7 +2,7 @@
 package storage
 
 import (
-	"github.com/medvih/raft-core/internal/raft"
+	"github.com/mehdiakiki/raft-core/internal/raft"
 )
 
 // MemoryStore is an in-memory implementation of raft.Storage.

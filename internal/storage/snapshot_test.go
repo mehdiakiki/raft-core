@@ -12,8 +12,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/medvih/raft-core/internal/raft"
-	"github.com/medvih/raft-core/internal/storage"
+	"github.com/mehdiakiki/raft-core/internal/raft"
+	"github.com/mehdiakiki/raft-core/internal/storage"
 )
 
 // Load on an empty store must return ErrNoSnapshot.

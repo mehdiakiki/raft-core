@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/medvih/raft-core/internal/raft"
+	"github.com/mehdiakiki/raft-core/internal/raft"
 )
 
 // ── Apply ──────────────────────────────────────────────────────────────────────

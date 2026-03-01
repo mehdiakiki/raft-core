@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/medvih/raft-core/gen/raft"
-	internalraft "github.com/medvih/raft-core/internal/raft"
+	"github.com/mehdiakiki/raft-core/gen/raft"
+	internalraft "github.com/mehdiakiki/raft-core/internal/raft"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"

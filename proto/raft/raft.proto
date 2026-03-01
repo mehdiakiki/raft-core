@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package raft;
 
-option go_package = "github.com/medvih/raft-core/gen/raft";
+option go_package = "github.com/mehdiakiki/raft-core/gen/raft";
 
 // ── Peer-to-peer Raft RPCs (Ongaro & Ousterhout §5.2, §5.3) ─────────────────
 

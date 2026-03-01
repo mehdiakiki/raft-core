@@ -1676,7 +1676,7 @@ const file_raft_proto_rawDesc = "" +
 	"WatchState\x12\x17.raft.WatchStateRequest\x1a\x15.raft.NodeStateUpdate0\x01\x12E\n" +
 	"\rSubmitCommand\x12\x1a.raft.SubmitCommandRequest\x1a\x18.raft.SubmitCommandReply\x126\n" +
 	"\bSetAlive\x12\x15.raft.SetAliveRequest\x1a\x13.raft.SetAliveReply\x129\n" +
-	"\tReadIndex\x12\x16.raft.ReadIndexRequest\x1a\x14.raft.ReadIndexReplyB&Z$github.com/medvih/raft-core/gen/raftb\x06proto3"
+	"\tReadIndex\x12\x16.raft.ReadIndexRequest\x1a\x14.raft.ReadIndexReplyB*Z(github.com/mehdiakiki/raft-core/gen/raftb\x06proto3"
 
 var (
 	file_raft_proto_rawDescOnce sync.Once

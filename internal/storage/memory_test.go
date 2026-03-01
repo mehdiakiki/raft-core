@@ -3,7 +3,7 @@ package storage
 import (
 	"testing"
 
-	"github.com/medvih/raft-core/internal/raft"
+	"github.com/mehdiakiki/raft-core/internal/raft"
 )
 
 func TestMemoryStore_GetTerm_Empty(t *testing.T) {

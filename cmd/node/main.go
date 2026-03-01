@@ -20,9 +20,9 @@ import (
 	"syscall"
 	"time"
 
-	pb "github.com/medvih/raft-core/gen/raft"
-	"github.com/medvih/raft-core/internal/raft"
-	"github.com/medvih/raft-core/internal/storage"
+	pb "github.com/mehdiakiki/raft-core/gen/raft"
+	"github.com/mehdiakiki/raft-core/internal/raft"
+	"github.com/mehdiakiki/raft-core/internal/storage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

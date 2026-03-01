@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/medvih/raft-core/internal/raft"
+	"github.com/mehdiakiki/raft-core/internal/raft"
 	"go.etcd.io/bbolt"
 )
 

@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/medvih/raft-core/gen/raft"
-	"github.com/medvih/raft-core/internal/raft"
-	"github.com/medvih/raft-core/internal/storage"
+	pb "github.com/mehdiakiki/raft-core/gen/raft"
+	"github.com/mehdiakiki/raft-core/internal/raft"
+	"github.com/mehdiakiki/raft-core/internal/storage"
 )
 
 // SetAlive(true) must perform crash-style recovery by reloading durable state.

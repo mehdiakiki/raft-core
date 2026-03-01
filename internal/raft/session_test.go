@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/medvih/raft-core/internal/raft"
-	"github.com/medvih/raft-core/internal/storage"
+	"github.com/mehdiakiki/raft-core/internal/raft"
+	"github.com/mehdiakiki/raft-core/internal/storage"
 )
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-module github.com/medvih/raft-core
+module github.com/mehdiakiki/raft-core
 
 go 1.25
 
