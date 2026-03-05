@@ -1541,6 +1541,174 @@ func (x *InstallSnapshotReply) GetSuccess() bool {
 	return false
 }
 
+// RaftStateEvent is pushed by nodes to the gateway on every state change.
+// The gateway broadcasts these events to WebSocket clients.
+// Frontend reconstructs state by replaying the event stream.
+type RaftStateEvent struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	NodeId string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"` // which node this event is about
+	// Core state (only what changed - use optional for delta semantics)
+	State       *string `protobuf:"bytes,2,opt,name=state,proto3,oneof" json:"state,omitempty"`                                 // FOLLOWER, CANDIDATE, LEADER, DEAD
+	CurrentTerm *int64  `protobuf:"varint,3,opt,name=current_term,json=currentTerm,proto3,oneof" json:"current_term,omitempty"` // term when this event occurred
+	VotedFor    *string `protobuf:"bytes,4,opt,name=voted_for,json=votedFor,proto3,oneof" json:"voted_for,omitempty"`           // who this node voted for (if any)
+	// Timing metadata (for UI animation)
+	EventTimeMs int64 `protobuf:"varint,5,opt,name=event_time_ms,json=eventTimeMs,proto3" json:"event_time_ms,omitempty"` // Unix milliseconds when event occurred
+	// Commit/apply progress (optional, for detailed view)
+	CommitIndex *int64 `protobuf:"varint,6,opt,name=commit_index,json=commitIndex,proto3,oneof" json:"commit_index,omitempty"`
+	LastApplied *int64 `protobuf:"varint,7,opt,name=last_applied,json=lastApplied,proto3,oneof" json:"last_applied,omitempty"`
+	// Leader state (optional, only for leaders)
+	LeaderId *string `protobuf:"bytes,8,opt,name=leader_id,json=leaderId,proto3,oneof" json:"leader_id,omitempty"`
+	// Metrics (optional, for diagnostics)
+	ElectionsStarted *int64 `protobuf:"varint,9,opt,name=elections_started,json=electionsStarted,proto3,oneof" json:"elections_started,omitempty"`
+	ElectionsWon     *int64 `protobuf:"varint,10,opt,name=elections_won,json=electionsWon,proto3,oneof" json:"elections_won,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *RaftStateEvent) Reset() {
+	*x = RaftStateEvent{}
+	mi := &file_raft_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RaftStateEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RaftStateEvent) ProtoMessage() {}
+
+func (x *RaftStateEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_raft_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RaftStateEvent.ProtoReflect.Descriptor instead.
+func (*RaftStateEvent) Descriptor() ([]byte, []int) {
+	return file_raft_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *RaftStateEvent) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *RaftStateEvent) GetState() string {
+	if x != nil && x.State != nil {
+		return *x.State
+	}
+	return ""
+}
+
+func (x *RaftStateEvent) GetCurrentTerm() int64 {
+	if x != nil && x.CurrentTerm != nil {
+		return *x.CurrentTerm
+	}
+	return 0
+}
+
+func (x *RaftStateEvent) GetVotedFor() string {
+	if x != nil && x.VotedFor != nil {
+		return *x.VotedFor
+	}
+	return ""
+}
+
+func (x *RaftStateEvent) GetEventTimeMs() int64 {
+	if x != nil {
+		return x.EventTimeMs
+	}
+	return 0
+}
+
+func (x *RaftStateEvent) GetCommitIndex() int64 {
+	if x != nil && x.CommitIndex != nil {
+		return *x.CommitIndex
+	}
+	return 0
+}
+
+func (x *RaftStateEvent) GetLastApplied() int64 {
+	if x != nil && x.LastApplied != nil {
+		return *x.LastApplied
+	}
+	return 0
+}
+
+func (x *RaftStateEvent) GetLeaderId() string {
+	if x != nil && x.LeaderId != nil {
+		return *x.LeaderId
+	}
+	return ""
+}
+
+func (x *RaftStateEvent) GetElectionsStarted() int64 {
+	if x != nil && x.ElectionsStarted != nil {
+		return *x.ElectionsStarted
+	}
+	return 0
+}
+
+func (x *RaftStateEvent) GetElectionsWon() int64 {
+	if x != nil && x.ElectionsWon != nil {
+		return *x.ElectionsWon
+	}
+	return 0
+}
+
+type PushStateAck struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Received      bool                   `protobuf:"varint,1,opt,name=received,proto3" json:"received,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PushStateAck) Reset() {
+	*x = PushStateAck{}
+	mi := &file_raft_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PushStateAck) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PushStateAck) ProtoMessage() {}
+
+func (x *PushStateAck) ProtoReflect() protoreflect.Message {
+	mi := &file_raft_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PushStateAck.ProtoReflect.Descriptor instead.
+func (*PushStateAck) Descriptor() ([]byte, []int) {
+	return file_raft_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *PushStateAck) GetReceived() bool {
+	if x != nil {
+		return x.Received
+	}
+	return false
+}
+
 var File_raft_proto protoreflect.FileDescriptor
 
 const file_raft_proto_rawDesc = "" +
@@ -1657,7 +1825,31 @@ const file_raft_proto_rawDesc = "" +
 	"\rconfiguration\x18\b \x01(\v2\x18.raft.ClusterConfigProtoR\rconfiguration\"D\n" +
 	"\x14InstallSnapshotReply\x12\x12\n" +
 	"\x04term\x18\x01 \x01(\x03R\x04term\x12\x18\n" +
-	"\asuccess\x18\x02 \x01(\bR\asuccess*O\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess\"\x81\x04\n" +
+	"\x0eRaftStateEvent\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x19\n" +
+	"\x05state\x18\x02 \x01(\tH\x00R\x05state\x88\x01\x01\x12&\n" +
+	"\fcurrent_term\x18\x03 \x01(\x03H\x01R\vcurrentTerm\x88\x01\x01\x12 \n" +
+	"\tvoted_for\x18\x04 \x01(\tH\x02R\bvotedFor\x88\x01\x01\x12\"\n" +
+	"\revent_time_ms\x18\x05 \x01(\x03R\veventTimeMs\x12&\n" +
+	"\fcommit_index\x18\x06 \x01(\x03H\x03R\vcommitIndex\x88\x01\x01\x12&\n" +
+	"\flast_applied\x18\a \x01(\x03H\x04R\vlastApplied\x88\x01\x01\x12 \n" +
+	"\tleader_id\x18\b \x01(\tH\x05R\bleaderId\x88\x01\x01\x120\n" +
+	"\x11elections_started\x18\t \x01(\x03H\x06R\x10electionsStarted\x88\x01\x01\x12(\n" +
+	"\relections_won\x18\n" +
+	" \x01(\x03H\aR\felectionsWon\x88\x01\x01B\b\n" +
+	"\x06_stateB\x0f\n" +
+	"\r_current_termB\f\n" +
+	"\n" +
+	"_voted_forB\x0f\n" +
+	"\r_commit_indexB\x0f\n" +
+	"\r_last_appliedB\f\n" +
+	"\n" +
+	"_leader_idB\x14\n" +
+	"\x12_elections_startedB\x10\n" +
+	"\x0e_elections_won\"*\n" +
+	"\fPushStateAck\x12\x1a\n" +
+	"\breceived\x18\x01 \x01(\bR\breceived*O\n" +
 	"\fLogEntryType\x12\x15\n" +
 	"\x11LOG_ENTRY_COMMAND\x10\x00\x12\x12\n" +
 	"\x0eLOG_ENTRY_NOOP\x10\x01\x12\x14\n" +
@@ -1676,7 +1868,9 @@ const file_raft_proto_rawDesc = "" +
 	"WatchState\x12\x17.raft.WatchStateRequest\x1a\x15.raft.NodeStateUpdate0\x01\x12E\n" +
 	"\rSubmitCommand\x12\x1a.raft.SubmitCommandRequest\x1a\x18.raft.SubmitCommandReply\x126\n" +
 	"\bSetAlive\x12\x15.raft.SetAliveRequest\x1a\x13.raft.SetAliveReply\x129\n" +
-	"\tReadIndex\x12\x16.raft.ReadIndexRequest\x1a\x14.raft.ReadIndexReplyB*Z(github.com/mehdiakiki/raft-core/gen/raftb\x06proto3"
+	"\tReadIndex\x12\x16.raft.ReadIndexRequest\x1a\x14.raft.ReadIndexReply2D\n" +
+	"\vRaftGateway\x125\n" +
+	"\tPushState\x12\x14.raft.RaftStateEvent\x1a\x12.raft.PushStateAckB*Z(github.com/mehdiakiki/raft-core/gen/raftb\x06proto3"
 
 var (
 	file_raft_proto_rawDescOnce sync.Once
@@ -1691,7 +1885,7 @@ func file_raft_proto_rawDescGZIP() []byte {
 }
 
 var file_raft_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_raft_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_raft_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_raft_proto_goTypes = []any{
 	(LogEntryType)(0),            // 0: raft.LogEntryType
 	(ConsistencyLevel)(0),        // 1: raft.ConsistencyLevel
@@ -1717,15 +1911,17 @@ var file_raft_proto_goTypes = []any{
 	(*ClusterConfigProto)(nil),   // 21: raft.ClusterConfigProto
 	(*InstallSnapshotArgs)(nil),  // 22: raft.InstallSnapshotArgs
 	(*InstallSnapshotReply)(nil), // 23: raft.InstallSnapshotReply
-	nil,                          // 24: raft.NodeStateReply.NextIndexEntry
-	nil,                          // 25: raft.NodeStateReply.MatchIndexEntry
+	(*RaftStateEvent)(nil),       // 24: raft.RaftStateEvent
+	(*PushStateAck)(nil),         // 25: raft.PushStateAck
+	nil,                          // 26: raft.NodeStateReply.NextIndexEntry
+	nil,                          // 27: raft.NodeStateReply.MatchIndexEntry
 }
 var file_raft_proto_depIdxs = []int32{
 	0,  // 0: raft.LogEntry.type:type_name -> raft.LogEntryType
 	6,  // 1: raft.AppendEntriesArgs.entries:type_name -> raft.LogEntry
 	6,  // 2: raft.NodeStateReply.log:type_name -> raft.LogEntry
-	24, // 3: raft.NodeStateReply.next_index:type_name -> raft.NodeStateReply.NextIndexEntry
-	25, // 4: raft.NodeStateReply.match_index:type_name -> raft.NodeStateReply.MatchIndexEntry
+	26, // 3: raft.NodeStateReply.next_index:type_name -> raft.NodeStateReply.NextIndexEntry
+	27, // 4: raft.NodeStateReply.match_index:type_name -> raft.NodeStateReply.MatchIndexEntry
 	11, // 5: raft.NodeStateReply.metrics:type_name -> raft.ProtocolMetrics
 	10, // 6: raft.NodeStateUpdate.state:type_name -> raft.NodeStateReply
 	1,  // 7: raft.ReadIndexRequest.consistency:type_name -> raft.ConsistencyLevel
@@ -1740,17 +1936,19 @@ var file_raft_proto_depIdxs = []int32{
 	16, // 16: raft.RaftService.SubmitCommand:input_type -> raft.SubmitCommandRequest
 	18, // 17: raft.RaftService.SetAlive:input_type -> raft.SetAliveRequest
 	14, // 18: raft.RaftService.ReadIndex:input_type -> raft.ReadIndexRequest
-	3,  // 19: raft.RaftService.RequestVote:output_type -> raft.RequestVoteReply
-	8,  // 20: raft.RaftService.AppendEntries:output_type -> raft.AppendEntriesReply
-	5,  // 21: raft.RaftService.PreVote:output_type -> raft.PreVoteReply
-	23, // 22: raft.RaftService.InstallSnapshot:output_type -> raft.InstallSnapshotReply
-	10, // 23: raft.RaftService.GetState:output_type -> raft.NodeStateReply
-	13, // 24: raft.RaftService.WatchState:output_type -> raft.NodeStateUpdate
-	17, // 25: raft.RaftService.SubmitCommand:output_type -> raft.SubmitCommandReply
-	19, // 26: raft.RaftService.SetAlive:output_type -> raft.SetAliveReply
-	15, // 27: raft.RaftService.ReadIndex:output_type -> raft.ReadIndexReply
-	19, // [19:28] is the sub-list for method output_type
-	10, // [10:19] is the sub-list for method input_type
+	24, // 19: raft.RaftGateway.PushState:input_type -> raft.RaftStateEvent
+	3,  // 20: raft.RaftService.RequestVote:output_type -> raft.RequestVoteReply
+	8,  // 21: raft.RaftService.AppendEntries:output_type -> raft.AppendEntriesReply
+	5,  // 22: raft.RaftService.PreVote:output_type -> raft.PreVoteReply
+	23, // 23: raft.RaftService.InstallSnapshot:output_type -> raft.InstallSnapshotReply
+	10, // 24: raft.RaftService.GetState:output_type -> raft.NodeStateReply
+	13, // 25: raft.RaftService.WatchState:output_type -> raft.NodeStateUpdate
+	17, // 26: raft.RaftService.SubmitCommand:output_type -> raft.SubmitCommandReply
+	19, // 27: raft.RaftService.SetAlive:output_type -> raft.SetAliveReply
+	15, // 28: raft.RaftService.ReadIndex:output_type -> raft.ReadIndexReply
+	25, // 29: raft.RaftGateway.PushState:output_type -> raft.PushStateAck
+	20, // [20:30] is the sub-list for method output_type
+	10, // [10:20] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name
 	10, // [10:10] is the sub-list for extension extendee
 	0,  // [0:10] is the sub-list for field type_name
@@ -1761,15 +1959,16 @@ func file_raft_proto_init() {
 	if File_raft_proto != nil {
 		return
 	}
+	file_raft_proto_msgTypes[22].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_raft_proto_rawDesc), len(file_raft_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   24,
+			NumMessages:   26,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   2,
 		},
 		GoTypes:           file_raft_proto_goTypes,
 		DependencyIndexes: file_raft_proto_depIdxs,

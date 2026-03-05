@@ -2,10 +2,10 @@
 //
 // Usage:
 //
-//	node --id=A --addr=:50051 --peers=B=node-b:50052,C=node-c:50053 --storage-dir=/data/raft
+//	node --id=A --addr=:50051 --peers=B=node-b:50052,C=node-c:50053 --gateway=gateway:50051
 //
 // The node dials its peers over gRPC and runs the Raft state machine.
-// State changes are streamed to any connected gateway via the WatchState RPC.
+// If --gateway is set, state changes are pushed to the gateway via PushState RPC.
 package main
 
 import (
@@ -21,6 +21,7 @@ import (
 	"time"
 
 	pb "github.com/mehdiakiki/raft-core/gen/raft"
+	"github.com/mehdiakiki/raft-core/internal/gateway"
 	"github.com/mehdiakiki/raft-core/internal/raft"
 	"github.com/mehdiakiki/raft-core/internal/storage"
 	"google.golang.org/grpc"
@@ -32,6 +33,7 @@ func main() {
 	addr := flag.String("addr", ":50051", "gRPC listen address (e.g. :50051)")
 	peersFlag := flag.String("peers", "", "comma-separated peer list: ID=host:port,…")
 	storageDir := flag.String("storage-dir", "", "directory for persistent storage (if empty, uses in-memory)")
+	gatewayAddr := flag.String("gateway", "", "gateway address to push state events (e.g. gateway:50051)")
 	logLevel := flag.String("log-level", "info", "log level: debug, info, warn, error")
 	electionTimeoutMin := flag.Duration("election-timeout-min", 0, "override minimum election timeout (e.g. 350ms)")
 	electionTimeoutMax := flag.Duration("election-timeout-max", 0, "override maximum election timeout (e.g. 700ms)")
@@ -81,10 +83,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	var observers []raft.StateObserver
+	if *gatewayAddr != "" {
+		pusher, err := gateway.NewPusher(*id, *gatewayAddr)
+		if err != nil {
+			slog.Error("failed to connect to gateway", "addr", *gatewayAddr, "err", err)
+			os.Exit(1)
+		}
+		observers = append(observers, pusher)
+		slog.Info("gateway pusher enabled", "addr", *gatewayAddr)
+		defer pusher.Close()
+	}
+
 	config := raft.Config{
 		ID:                 *id,
 		Peers:              peers,
 		Storage:            store,
+		Observers:          observers,
 		ElectionTimeoutMin: *electionTimeoutMin,
 		ElectionTimeoutMax: *electionTimeoutMax,
 		HeartbeatInterval:  *heartbeatInterval,

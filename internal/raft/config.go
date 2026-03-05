@@ -79,6 +79,11 @@ type Config struct {
 	// HeartbeatInterval overrides the default heartbeat interval.
 	// Use 0 for default value.
 	HeartbeatInterval time.Duration
+
+	// Observers receives state change notifications.
+	// Optional - can be used for visualization, metrics, or event streaming.
+	// Observers are called synchronously on state changes and must be non-blocking.
+	Observers []StateObserver
 }
 
 // electionTimeoutMin returns the configured minimum election timeout,

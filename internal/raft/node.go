@@ -98,6 +98,10 @@ type Node struct {
 	// metrics tracks protocol counters for operations and diagnostics.
 	metrics *Metrics
 
+	// ── Observers ────────────────────────────────────────────────────────────────
+	// observers receive state change notifications.
+	observers observerList
+
 	// ── Public Output ──────────────────────────────────────────────────────────────
 	StateCh chan StateSnapshot // Buffered channel for state updates
 }
@@ -134,6 +138,7 @@ func New(config Config) *Node {
 		clientSessions:  make(map[string]ClientSession),
 		pendingReads:    make(map[string]*pendingRead),
 		metrics:         newMetrics(),
+		observers:       config.Observers,
 	}
 
 	// Load persisted state from storage.
@@ -874,9 +879,11 @@ func (n *Node) signalApplyReady() {
 
 // ── State Notification ─────────────────────────────────────────────────────────
 
-// notifyStateChange sends the current state to the StateCh channel.
+// notifyStateChange sends the current state to the StateCh channel
+// and notifies all registered observers.
 //
 // This is non-blocking; if the channel buffer is full, the update is dropped.
+// Observers are called synchronously and must be non-blocking.
 // Caller must hold n.mu.
 func (n *Node) notifyStateChange() {
 	snap := n.snapshot()
@@ -885,6 +892,16 @@ func (n *Node) notifyStateChange() {
 	default:
 		// Buffer full, drop the update.
 	}
+	n.observers.notifyAll(snap)
+}
+
+// AddObserver registers a new state observer.
+// Observers receive state change notifications after AddObserver returns.
+// The observer will not receive past state - only future changes.
+func (n *Node) AddObserver(obs StateObserver) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	n.observers = append(n.observers, obs)
 }
 
 // snapshot creates a StateSnapshot from the current state.

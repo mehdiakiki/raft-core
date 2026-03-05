@@ -39,7 +39,7 @@ type RaftServiceClient interface {
 	AppendEntries(ctx context.Context, in *AppendEntriesArgs, opts ...grpc.CallOption) (*AppendEntriesReply, error)
 	PreVote(ctx context.Context, in *PreVoteArgs, opts ...grpc.CallOption) (*PreVoteReply, error)
 	InstallSnapshot(ctx context.Context, in *InstallSnapshotArgs, opts ...grpc.CallOption) (*InstallSnapshotReply, error)
-	// Gateway observability
+	// Gateway observability (legacy - will be deprecated)
 	GetState(ctx context.Context, in *GetStateRequest, opts ...grpc.CallOption) (*NodeStateReply, error)
 	WatchState(ctx context.Context, in *WatchStateRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[NodeStateUpdate], error)
 	// Gateway commands
@@ -165,7 +165,7 @@ type RaftServiceServer interface {
 	AppendEntries(context.Context, *AppendEntriesArgs) (*AppendEntriesReply, error)
 	PreVote(context.Context, *PreVoteArgs) (*PreVoteReply, error)
 	InstallSnapshot(context.Context, *InstallSnapshotArgs) (*InstallSnapshotReply, error)
-	// Gateway observability
+	// Gateway observability (legacy - will be deprecated)
 	GetState(context.Context, *GetStateRequest) (*NodeStateReply, error)
 	WatchState(*WatchStateRequest, grpc.ServerStreamingServer[NodeStateUpdate]) error
 	// Gateway commands
@@ -433,5 +433,115 @@ var RaftService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
+	Metadata: "raft.proto",
+}
+
+const (
+	RaftGateway_PushState_FullMethodName = "/raft.RaftGateway/PushState"
+)
+
+// RaftGatewayClient is the client API for RaftGateway service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// RaftGateway is the event-sourcing service that receives state push from nodes.
+// Nodes call PushState on every state change. Gateway broadcasts to WebSocket clients.
+type RaftGatewayClient interface {
+	// Called by nodes on EVERY state change
+	PushState(ctx context.Context, in *RaftStateEvent, opts ...grpc.CallOption) (*PushStateAck, error)
+}
+
+type raftGatewayClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewRaftGatewayClient(cc grpc.ClientConnInterface) RaftGatewayClient {
+	return &raftGatewayClient{cc}
+}
+
+func (c *raftGatewayClient) PushState(ctx context.Context, in *RaftStateEvent, opts ...grpc.CallOption) (*PushStateAck, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PushStateAck)
+	err := c.cc.Invoke(ctx, RaftGateway_PushState_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// RaftGatewayServer is the server API for RaftGateway service.
+// All implementations must embed UnimplementedRaftGatewayServer
+// for forward compatibility.
+//
+// RaftGateway is the event-sourcing service that receives state push from nodes.
+// Nodes call PushState on every state change. Gateway broadcasts to WebSocket clients.
+type RaftGatewayServer interface {
+	// Called by nodes on EVERY state change
+	PushState(context.Context, *RaftStateEvent) (*PushStateAck, error)
+	mustEmbedUnimplementedRaftGatewayServer()
+}
+
+// UnimplementedRaftGatewayServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedRaftGatewayServer struct{}
+
+func (UnimplementedRaftGatewayServer) PushState(context.Context, *RaftStateEvent) (*PushStateAck, error) {
+	return nil, status.Error(codes.Unimplemented, "method PushState not implemented")
+}
+func (UnimplementedRaftGatewayServer) mustEmbedUnimplementedRaftGatewayServer() {}
+func (UnimplementedRaftGatewayServer) testEmbeddedByValue()                     {}
+
+// UnsafeRaftGatewayServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RaftGatewayServer will
+// result in compilation errors.
+type UnsafeRaftGatewayServer interface {
+	mustEmbedUnimplementedRaftGatewayServer()
+}
+
+func RegisterRaftGatewayServer(s grpc.ServiceRegistrar, srv RaftGatewayServer) {
+	// If the following call panics, it indicates UnimplementedRaftGatewayServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&RaftGateway_ServiceDesc, srv)
+}
+
+func _RaftGateway_PushState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RaftStateEvent)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RaftGatewayServer).PushState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RaftGateway_PushState_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftGatewayServer).PushState(ctx, req.(*RaftStateEvent))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// RaftGateway_ServiceDesc is the grpc.ServiceDesc for RaftGateway service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var RaftGateway_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "raft.RaftGateway",
+	HandlerType: (*RaftGatewayServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "PushState",
+			Handler:    _RaftGateway_PushState_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "raft.proto",
 }

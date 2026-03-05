@@ -192,6 +192,38 @@ message InstallSnapshotReply {
   bool  success = 2;
 }
 
+// ── Event Sourcing: Minimal state events for UI reconstruction ───────────────
+
+// RaftStateEvent is pushed by nodes to the gateway on every state change.
+// The gateway broadcasts these events to WebSocket clients.
+// Frontend reconstructs state by replaying the event stream.
+message RaftStateEvent {
+  string node_id = 1;       // which node this event is about
+  
+  // Core state (only what changed - use optional for delta semantics)
+  optional string state = 2;         // FOLLOWER, CANDIDATE, LEADER, DEAD
+  optional int64 current_term = 3;    // term when this event occurred
+  optional string voted_for = 4;      // who this node voted for (if any)
+  
+  // Timing metadata (for UI animation)
+  int64 event_time_ms = 5;            // Unix milliseconds when event occurred
+  
+  // Commit/apply progress (optional, for detailed view)
+  optional int64 commit_index = 6;
+  optional int64 last_applied = 7;
+  
+  // Leader state (optional, only for leaders)
+  optional string leader_id = 8;
+  
+  // Metrics (optional, for diagnostics)
+  optional int64 elections_started = 9;
+  optional int64 elections_won = 10;
+}
+
+message PushStateAck {
+  bool received = 1;
+}
+
 // ── Service definition ───────────────────────────────────────────────────────
 
 service RaftService {
@@ -201,7 +233,7 @@ service RaftService {
   rpc PreVote          (PreVoteArgs)          returns (PreVoteReply);
   rpc InstallSnapshot  (InstallSnapshotArgs)  returns (InstallSnapshotReply);
 
-  // Gateway observability
+  // Gateway observability (legacy - will be deprecated)
   rpc GetState  (GetStateRequest)  returns (NodeStateReply);
   rpc WatchState(WatchStateRequest) returns (stream NodeStateUpdate);
 
@@ -211,4 +243,11 @@ service RaftService {
 
   // Linearizable reads
   rpc ReadIndex (ReadIndexRequest) returns (ReadIndexReply);
+}
+
+// RaftGateway is the event-sourcing service that receives state push from nodes.
+// Nodes call PushState on every state change. Gateway broadcasts to WebSocket clients.
+service RaftGateway {
+  // Called by nodes on EVERY state change
+  rpc PushState(RaftStateEvent) returns (PushStateAck);
 }
