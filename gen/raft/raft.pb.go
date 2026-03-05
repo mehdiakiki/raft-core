@@ -1561,8 +1561,11 @@ type RaftStateEvent struct {
 	// Metrics (optional, for diagnostics)
 	ElectionsStarted *int64 `protobuf:"varint,9,opt,name=elections_started,json=electionsStarted,proto3,oneof" json:"elections_started,omitempty"`
 	ElectionsWon     *int64 `protobuf:"varint,10,opt,name=elections_won,json=electionsWon,proto3,oneof" json:"elections_won,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Timing telemetry (for UI animation)
+	HeartbeatIntervalMs *int64 `protobuf:"varint,11,opt,name=heartbeat_interval_ms,json=heartbeatIntervalMs,proto3,oneof" json:"heartbeat_interval_ms,omitempty"` // leader heartbeat interval
+	ElectionTimeoutMs   *int64 `protobuf:"varint,12,opt,name=election_timeout_ms,json=electionTimeoutMs,proto3,oneof" json:"election_timeout_ms,omitempty"`       // this node's election timeout
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *RaftStateEvent) Reset() {
@@ -1661,6 +1664,20 @@ func (x *RaftStateEvent) GetElectionsStarted() int64 {
 func (x *RaftStateEvent) GetElectionsWon() int64 {
 	if x != nil && x.ElectionsWon != nil {
 		return *x.ElectionsWon
+	}
+	return 0
+}
+
+func (x *RaftStateEvent) GetHeartbeatIntervalMs() int64 {
+	if x != nil && x.HeartbeatIntervalMs != nil {
+		return *x.HeartbeatIntervalMs
+	}
+	return 0
+}
+
+func (x *RaftStateEvent) GetElectionTimeoutMs() int64 {
+	if x != nil && x.ElectionTimeoutMs != nil {
+		return *x.ElectionTimeoutMs
 	}
 	return 0
 }
@@ -1825,7 +1842,7 @@ const file_raft_proto_rawDesc = "" +
 	"\rconfiguration\x18\b \x01(\v2\x18.raft.ClusterConfigProtoR\rconfiguration\"D\n" +
 	"\x14InstallSnapshotReply\x12\x12\n" +
 	"\x04term\x18\x01 \x01(\x03R\x04term\x12\x18\n" +
-	"\asuccess\x18\x02 \x01(\bR\asuccess\"\x81\x04\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess\"\xa1\x05\n" +
 	"\x0eRaftStateEvent\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x19\n" +
 	"\x05state\x18\x02 \x01(\tH\x00R\x05state\x88\x01\x01\x12&\n" +
@@ -1837,7 +1854,9 @@ const file_raft_proto_rawDesc = "" +
 	"\tleader_id\x18\b \x01(\tH\x05R\bleaderId\x88\x01\x01\x120\n" +
 	"\x11elections_started\x18\t \x01(\x03H\x06R\x10electionsStarted\x88\x01\x01\x12(\n" +
 	"\relections_won\x18\n" +
-	" \x01(\x03H\aR\felectionsWon\x88\x01\x01B\b\n" +
+	" \x01(\x03H\aR\felectionsWon\x88\x01\x01\x127\n" +
+	"\x15heartbeat_interval_ms\x18\v \x01(\x03H\bR\x13heartbeatIntervalMs\x88\x01\x01\x123\n" +
+	"\x13election_timeout_ms\x18\f \x01(\x03H\tR\x11electionTimeoutMs\x88\x01\x01B\b\n" +
 	"\x06_stateB\x0f\n" +
 	"\r_current_termB\f\n" +
 	"\n" +
@@ -1847,7 +1866,9 @@ const file_raft_proto_rawDesc = "" +
 	"\n" +
 	"_leader_idB\x14\n" +
 	"\x12_elections_startedB\x10\n" +
-	"\x0e_elections_won\"*\n" +
+	"\x0e_elections_wonB\x18\n" +
+	"\x16_heartbeat_interval_msB\x16\n" +
+	"\x14_election_timeout_ms\"*\n" +
 	"\fPushStateAck\x12\x1a\n" +
 	"\breceived\x18\x01 \x01(\bR\breceived*O\n" +
 	"\fLogEntryType\x12\x15\n" +

@@ -52,14 +52,16 @@ func (p *Pusher) snapshotToEvent(lite raft.StateSnapshotLite) *pb.RaftStateEvent
 	state := lite.State.String()
 
 	return &pb.RaftStateEvent{
-		NodeId:      lite.NodeID,
-		State:       &state,
-		CurrentTerm: &lite.CurrentTerm,
-		VotedFor:    ptrString(lite.VotedFor),
-		EventTimeMs: lite.EventTimeMs,
-		CommitIndex: &lite.CommitIndex,
-		LastApplied: &lite.LastApplied,
-		LeaderId:    ptrString(lite.LeaderID),
+		NodeId:              lite.NodeID,
+		State:               &state,
+		CurrentTerm:         &lite.CurrentTerm,
+		VotedFor:            ptrString(lite.VotedFor),
+		EventTimeMs:         lite.EventTimeMs,
+		CommitIndex:         &lite.CommitIndex,
+		LastApplied:         &lite.LastApplied,
+		LeaderId:            ptrString(lite.LeaderID),
+		HeartbeatIntervalMs: ptrInt64(lite.HeartbeatIntervalMs),
+		ElectionTimeoutMs:   ptrInt64(lite.ElectionTimeoutMs),
 	}
 }
 
@@ -77,4 +79,8 @@ func ptrString(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func ptrInt64(v int64) *int64 {
+	return &v
 }
