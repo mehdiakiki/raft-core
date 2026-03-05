@@ -3,6 +3,7 @@ package raft
 import (
 	"context"
 	"log/slog"
+	"time"
 )
 
 // startElection begins a new election term.
@@ -56,6 +57,14 @@ func (n *Node) startElection(ctx context.Context) {
 	// Request votes from all peers in parallel.
 	for _, peerID := range peerIDs {
 		go func(pid string) {
+			// Notify observers of outgoing RPC
+			n.rpcObservers.notifySend(RpcEvent{
+				FromNode:  n.id,
+				ToNode:    pid,
+				RpcType:   "REQUEST_VOTE",
+				EventTime: time.Now(),
+			})
+
 			peer := n.peers[pid]
 			reply, err := peer.RequestVote(ctx, RequestVoteArgs{
 				Term:         term,

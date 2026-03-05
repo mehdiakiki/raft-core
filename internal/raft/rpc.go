@@ -23,6 +23,14 @@ func (n *Node) RequestVote(args RequestVoteArgs) RequestVoteReply {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
+	// Notify RPC observers of incoming request
+	n.rpcObservers.notifyReceive(RpcEvent{
+		FromNode:  args.CandidateID,
+		ToNode:    n.id,
+		RpcType:   "REQUEST_VOTE",
+		EventTime: time.Now(),
+	})
+
 	// Dead nodes ignore all RPCs.
 	if n.state == Dead {
 		slog.Debug("RequestVote ignored: node is dead", "id", n.id)
@@ -101,6 +109,14 @@ func (n *Node) RequestVote(args RequestVoteArgs) RequestVoteReply {
 func (n *Node) AppendEntries(args AppendEntriesArgs) AppendEntriesReply {
 	n.mu.Lock()
 	defer n.mu.Unlock()
+
+	// Notify RPC observers of incoming request
+	n.rpcObservers.notifyReceive(RpcEvent{
+		FromNode:  args.LeaderID,
+		ToNode:    n.id,
+		RpcType:   "APPEND_ENTRIES",
+		EventTime: time.Now(),
+	})
 
 	if n.state == Dead {
 		slog.Debug("AppendEntries ignored: node is dead", "id", n.id)

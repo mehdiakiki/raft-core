@@ -254,4 +254,20 @@ service RaftService {
 service RaftGateway {
   // Called by nodes on EVERY state change
   rpc PushState(RaftStateEvent) returns (PushStateAck);
+  
+  // Called by nodes on every RPC (for visualization)
+  rpc PushRpc(RaftRpcEvent) returns (PushRpcAck);
+}
+
+// RaftRpcEvent represents a single RPC message for visualization.
+// Nodes emit these when sending/receiving AppendEntries, RequestVote, etc.
+message RaftRpcEvent {
+  string from_node = 1;       // sender node ID
+  string to_node = 2;         // recipient node ID
+  string rpc_type = 3;        // "APPEND_ENTRIES", "REQUEST_VOTE", etc.
+  int64 event_time_ms = 4;    // Unix milliseconds
+}
+
+message PushRpcAck {
+  bool received = 1;
 }

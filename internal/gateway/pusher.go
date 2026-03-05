@@ -48,6 +48,39 @@ func (p *Pusher) OnStateChange(snapshot raft.StateSnapshot) {
 	}()
 }
 
+func (p *Pusher) OnRpcSend(event raft.RpcEvent) {
+	p.pushRpc(event, "SEND")
+}
+
+func (p *Pusher) OnRpcReceive(event raft.RpcEvent) {
+	p.pushRpc(event, "RECEIVE")
+}
+
+func (p *Pusher) pushRpc(event raft.RpcEvent, direction string) {
+	rpcEvent := &pb.RaftRpcEvent{
+		FromNode:    event.FromNode,
+		ToNode:      event.ToNode,
+		RpcType:     event.RpcType,
+		EventTimeMs: event.EventTime.UnixMilli(),
+	}
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		_, err := p.client.PushRpc(ctx, rpcEvent)
+		if err != nil {
+			slog.Debug("gateway RPC push failed",
+				"node", p.nodeID,
+				"direction", direction,
+				"from", event.FromNode,
+				"to", event.ToNode,
+				"type", event.RpcType,
+				"err", err)
+		}
+	}()
+}
+
 func (p *Pusher) snapshotToEvent(lite raft.StateSnapshotLite) *pb.RaftStateEvent {
 	state := lite.State.String()
 

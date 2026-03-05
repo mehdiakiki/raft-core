@@ -84,6 +84,11 @@ type Config struct {
 	// Optional - can be used for visualization, metrics, or event streaming.
 	// Observers are called synchronously on state changes and must be non-blocking.
 	Observers []StateObserver
+
+	// RpcObservers receives RPC event notifications.
+	// Optional - can be used for visualizing RPC traffic between nodes.
+	// RpcObservers are called synchronously during RPC processing and must be non-blocking.
+	RpcObservers []RpcObserver
 }
 
 // electionTimeoutMin returns the configured minimum election timeout,

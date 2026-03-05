@@ -3,6 +3,7 @@ package raft
 import (
 	"context"
 	"log/slog"
+	"time"
 )
 
 // replicateToPeer sends AppendEntries RPCs to a single peer.
@@ -52,6 +53,14 @@ func (n *Node) replicateToPeer(peerID string, peer Peer, leaderTerm int64, heart
 	leaderCommit := n.commitIndex
 
 	n.mu.Unlock()
+
+	// Notify observers of outgoing RPC
+	n.rpcObservers.notifySend(RpcEvent{
+		FromNode:  n.id,
+		ToNode:    peerID,
+		RpcType:   "APPEND_ENTRIES",
+		EventTime: time.Now(),
+	})
 
 	// Send the AppendEntries RPC.
 	reply, err := peer.AppendEntries(context.Background(), AppendEntriesArgs{

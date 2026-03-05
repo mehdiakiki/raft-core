@@ -102,6 +102,9 @@ type Node struct {
 	// observers receive state change notifications.
 	observers observerList
 
+	// rpcObservers receive RPC event notifications.
+	rpcObservers rpcObserverList
+
 	// ── Public Output ──────────────────────────────────────────────────────────────
 	StateCh chan StateSnapshot // Buffered channel for state updates
 }
@@ -139,6 +142,7 @@ func New(config Config) *Node {
 		pendingReads:    make(map[string]*pendingRead),
 		metrics:         newMetrics(),
 		observers:       config.Observers,
+		rpcObservers:    config.RpcObservers,
 	}
 
 	// Load persisted state from storage.
