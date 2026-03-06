@@ -108,6 +108,17 @@ func (n *Node) collectPreVoteGrants(
 // sendPreVoteTo sends a single PreVote RPC to the named peer and returns
 // whether the vote was granted.  Steps down if a higher term is observed.
 func (n *Node) sendPreVoteTo(ctx context.Context, peerID string, nextTerm, lastLogIndex, lastLogTerm int64) bool {
+	n.rpcObservers.notifySend(RpcEvent{
+		FromNode:    n.id,
+		ToNode:      peerID,
+		RpcType:     "PRE_VOTE",
+		RpcID:       preVoteRPCID(nextTerm, n.id, peerID),
+		EventTime:   time.Now(),
+		Term:        nextTerm,
+		HasTerm:     true,
+		CandidateID: n.id,
+	})
+
 	peer := n.peers[peerID]
 	reply, err := peer.PreVote(ctx, PreVoteArgs{
 		NextTerm:     nextTerm,
@@ -119,6 +130,18 @@ func (n *Node) sendPreVoteTo(ctx context.Context, peerID string, nextTerm, lastL
 		slog.Debug("PreVote RPC failed", "id", n.id, "peer", peerID, "error", err)
 		return false
 	}
+
+	n.rpcObservers.notifyReceive(RpcEvent{
+		FromNode:    peerID,
+		ToNode:      n.id,
+		RpcType:     "PRE_VOTE_REPLY",
+		RpcID:       preVoteReplyRPCID(nextTerm, peerID, n.id),
+		EventTime:   time.Now(),
+		Term:        nextTerm,
+		HasTerm:     true,
+		CandidateID: n.id,
+		VoteGranted: boolPtr(reply.VoteGranted),
+	})
 
 	// §5.1: Step down if a higher term is observed.
 	n.mu.Lock()
@@ -142,14 +165,42 @@ func (n *Node) PreVote(args PreVoteArgs) PreVoteReply {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
+	n.rpcObservers.notifyReceive(RpcEvent{
+		FromNode:    args.CandidateID,
+		ToNode:      n.id,
+		RpcType:     "PRE_VOTE",
+		RpcID:       preVoteRPCID(args.NextTerm, args.CandidateID, n.id),
+		EventTime:   time.Now(),
+		Term:        args.NextTerm,
+		HasTerm:     true,
+		CandidateID: args.CandidateID,
+	})
+
+	emitPreVoteReply := func(reply PreVoteReply) {
+		n.rpcObservers.notifySend(RpcEvent{
+			FromNode:    n.id,
+			ToNode:      args.CandidateID,
+			RpcType:     "PRE_VOTE_REPLY",
+			RpcID:       preVoteReplyRPCID(args.NextTerm, n.id, args.CandidateID),
+			EventTime:   time.Now(),
+			Term:        args.NextTerm,
+			HasTerm:     true,
+			CandidateID: args.CandidateID,
+			VoteGranted: boolPtr(reply.VoteGranted),
+		})
+	}
+
 	if n.state == Dead {
-		return PreVoteReply{}
+		reply := PreVoteReply{}
+		emitPreVoteReply(reply)
+		return reply
 	}
 
 	reply := PreVoteReply{Term: n.currentTerm}
 	if !n.selfIsVoter() {
 		slog.Debug("PreVote: denied because receiver is non-voter",
 			"id", n.id, "candidate", args.CandidateID)
+		emitPreVoteReply(reply)
 		return reply
 	}
 
@@ -171,6 +222,7 @@ func (n *Node) PreVote(args PreVoteArgs) PreVoteReply {
 			"logUpToDate", logUpToDate, "candidateIsVoter", candidateIsVoter, "leaderFresh", leaderFresh)
 	}
 
+	emitPreVoteReply(reply)
 	return reply
 }
 

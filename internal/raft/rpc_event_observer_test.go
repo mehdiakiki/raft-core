@@ -49,6 +49,23 @@ func (m *voteMockPeer) PreVote(_ context.Context, args PreVoteArgs) (PreVoteRepl
 	return PreVoteReply{Term: args.NextTerm, VoteGranted: true}, nil
 }
 
+type preVoteMockPeer struct {
+	reply PreVoteReply
+	err   error
+}
+
+func (m *preVoteMockPeer) RequestVote(_ context.Context, _ RequestVoteArgs) (RequestVoteReply, error) {
+	return RequestVoteReply{}, nil
+}
+
+func (m *preVoteMockPeer) AppendEntries(_ context.Context, _ AppendEntriesArgs) (AppendEntriesReply, error) {
+	return AppendEntriesReply{Success: true}, nil
+}
+
+func (m *preVoteMockPeer) PreVote(_ context.Context, _ PreVoteArgs) (PreVoteReply, error) {
+	return m.reply, m.err
+}
+
 func findEvent(t *testing.T, events []RpcEvent, rpcType, direction string) RpcEvent {
 	t.Helper()
 	for _, event := range events {
@@ -175,5 +192,95 @@ func TestStartElection_EmitsRequestVoteSendMetadata(t *testing.T) {
 			t.Fatalf("timed out waiting for REQUEST_VOTE send event; events=%v", events)
 		}
 		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func TestPreVote_EmitsMetadataRichRequestAndReplyEvents(t *testing.T) {
+	observer := &captureRpcObserver{}
+	node := New(Config{
+		ID: "B",
+		Peers: map[string]Peer{
+			"A": &voteMockPeer{},
+		},
+		RpcObservers: []RpcObserver{observer},
+	})
+
+	reply := node.PreVote(PreVoteArgs{
+		NextTerm:     6,
+		CandidateID:  "A",
+		LastLogIndex: 0,
+		LastLogTerm:  0,
+	})
+	if !reply.VoteGranted {
+		t.Fatal("expected pre-vote to be granted in setup")
+	}
+
+	events := observer.snapshot()
+	requestEvent := findEvent(t, events, "PRE_VOTE", RpcDirectionReceive)
+	if requestEvent.RpcID != preVoteRPCID(6, "A", "B") {
+		t.Fatalf("unexpected pre-vote request rpc_id: %s", requestEvent.RpcID)
+	}
+	if !requestEvent.HasTerm || requestEvent.Term != 6 {
+		t.Fatalf("expected pre-vote request term=6 with HasTerm=true, got term=%d has=%t", requestEvent.Term, requestEvent.HasTerm)
+	}
+	if requestEvent.CandidateID != "A" {
+		t.Fatalf("unexpected pre-vote request candidate_id: %q", requestEvent.CandidateID)
+	}
+
+	replyEvent := findEvent(t, events, "PRE_VOTE_REPLY", RpcDirectionSend)
+	if replyEvent.RpcID != preVoteReplyRPCID(6, "B", "A") {
+		t.Fatalf("unexpected pre-vote reply rpc_id: %s", replyEvent.RpcID)
+	}
+	if !replyEvent.HasTerm || replyEvent.Term != 6 {
+		t.Fatalf("expected pre-vote reply term=6 with HasTerm=true, got term=%d has=%t", replyEvent.Term, replyEvent.HasTerm)
+	}
+	if replyEvent.CandidateID != "A" {
+		t.Fatalf("unexpected pre-vote reply candidate_id: %q", replyEvent.CandidateID)
+	}
+	if replyEvent.VoteGranted == nil || !*replyEvent.VoteGranted {
+		t.Fatalf("expected pre-vote vote_granted=true, got %+v", replyEvent.VoteGranted)
+	}
+}
+
+func TestSendPreVoteTo_EmitsPreVoteSendAndReplyReceiveMetadata(t *testing.T) {
+	observer := &captureRpcObserver{}
+	node := New(Config{
+		ID: "A",
+		Peers: map[string]Peer{
+			"B": &preVoteMockPeer{
+				reply: PreVoteReply{Term: 0, VoteGranted: true},
+			},
+		},
+		RpcObservers: []RpcObserver{observer},
+	})
+
+	if !node.sendPreVoteTo(context.Background(), "B", 3, 0, 0) {
+		t.Fatal("expected sendPreVoteTo to return granted=true")
+	}
+
+	events := observer.snapshot()
+	reqEvent := findEvent(t, events, "PRE_VOTE", RpcDirectionSend)
+	if reqEvent.RpcID != preVoteRPCID(3, "A", "B") {
+		t.Fatalf("unexpected pre-vote send rpc_id: %s", reqEvent.RpcID)
+	}
+	if !reqEvent.HasTerm || reqEvent.Term != 3 {
+		t.Fatalf("expected pre-vote send term=3 with HasTerm=true, got term=%d has=%t", reqEvent.Term, reqEvent.HasTerm)
+	}
+	if reqEvent.CandidateID != "A" {
+		t.Fatalf("unexpected pre-vote send candidate_id: %q", reqEvent.CandidateID)
+	}
+
+	replyEvent := findEvent(t, events, "PRE_VOTE_REPLY", RpcDirectionReceive)
+	if replyEvent.RpcID != preVoteReplyRPCID(3, "B", "A") {
+		t.Fatalf("unexpected pre-vote receive rpc_id: %s", replyEvent.RpcID)
+	}
+	if !replyEvent.HasTerm || replyEvent.Term != 3 {
+		t.Fatalf("expected pre-vote receive term=3 with HasTerm=true, got term=%d has=%t", replyEvent.Term, replyEvent.HasTerm)
+	}
+	if replyEvent.CandidateID != "A" {
+		t.Fatalf("unexpected pre-vote receive candidate_id: %q", replyEvent.CandidateID)
+	}
+	if replyEvent.VoteGranted == nil || !*replyEvent.VoteGranted {
+		t.Fatalf("expected pre-vote receive vote_granted=true, got %+v", replyEvent.VoteGranted)
 	}
 }
