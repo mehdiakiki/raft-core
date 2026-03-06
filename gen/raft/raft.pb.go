@@ -1730,10 +1730,15 @@ func (x *PushStateAck) GetReceived() bool {
 // Nodes emit these when sending/receiving AppendEntries, RequestVote, etc.
 type RaftRpcEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	FromNode      string                 `protobuf:"bytes,1,opt,name=from_node,json=fromNode,proto3" json:"from_node,omitempty"`             // sender node ID
-	ToNode        string                 `protobuf:"bytes,2,opt,name=to_node,json=toNode,proto3" json:"to_node,omitempty"`                   // recipient node ID
-	RpcType       string                 `protobuf:"bytes,3,opt,name=rpc_type,json=rpcType,proto3" json:"rpc_type,omitempty"`                // "APPEND_ENTRIES", "REQUEST_VOTE", etc.
-	EventTimeMs   int64                  `protobuf:"varint,4,opt,name=event_time_ms,json=eventTimeMs,proto3" json:"event_time_ms,omitempty"` // Unix milliseconds
+	FromNode      string                 `protobuf:"bytes,1,opt,name=from_node,json=fromNode,proto3" json:"from_node,omitempty"`                 // sender node ID
+	ToNode        string                 `protobuf:"bytes,2,opt,name=to_node,json=toNode,proto3" json:"to_node,omitempty"`                       // recipient node ID
+	RpcType       string                 `protobuf:"bytes,3,opt,name=rpc_type,json=rpcType,proto3" json:"rpc_type,omitempty"`                    // "APPEND_ENTRIES", "REQUEST_VOTE", etc.
+	EventTimeMs   int64                  `protobuf:"varint,4,opt,name=event_time_ms,json=eventTimeMs,proto3" json:"event_time_ms,omitempty"`     // Unix milliseconds
+	RpcId         string                 `protobuf:"bytes,5,opt,name=rpc_id,json=rpcId,proto3" json:"rpc_id,omitempty"`                          // stable logical RPC identifier
+	Term          *int64                 `protobuf:"varint,6,opt,name=term,proto3,oneof" json:"term,omitempty"`                                  // term associated with this RPC
+	CandidateId   *string                `protobuf:"bytes,7,opt,name=candidate_id,json=candidateId,proto3,oneof" json:"candidate_id,omitempty"`  // candidate for vote RPCs
+	VoteGranted   *bool                  `protobuf:"varint,8,opt,name=vote_granted,json=voteGranted,proto3,oneof" json:"vote_granted,omitempty"` // vote result for VOTE_REPLY RPCs
+	Direction     *string                `protobuf:"bytes,9,opt,name=direction,proto3,oneof" json:"direction,omitempty"`                         // SEND or RECEIVE (gateway may emit canonical SEND only)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1794,6 +1799,41 @@ func (x *RaftRpcEvent) GetEventTimeMs() int64 {
 		return x.EventTimeMs
 	}
 	return 0
+}
+
+func (x *RaftRpcEvent) GetRpcId() string {
+	if x != nil {
+		return x.RpcId
+	}
+	return ""
+}
+
+func (x *RaftRpcEvent) GetTerm() int64 {
+	if x != nil && x.Term != nil {
+		return *x.Term
+	}
+	return 0
+}
+
+func (x *RaftRpcEvent) GetCandidateId() string {
+	if x != nil && x.CandidateId != nil {
+		return *x.CandidateId
+	}
+	return ""
+}
+
+func (x *RaftRpcEvent) GetVoteGranted() bool {
+	if x != nil && x.VoteGranted != nil {
+		return *x.VoteGranted
+	}
+	return false
+}
+
+func (x *RaftRpcEvent) GetDirection() string {
+	if x != nil && x.Direction != nil {
+		return *x.Direction
+	}
+	return ""
 }
 
 type PushRpcAck struct {
@@ -1984,12 +2024,22 @@ const file_raft_proto_rawDesc = "" +
 	"\x16_heartbeat_interval_msB\x16\n" +
 	"\x14_election_timeout_ms\"*\n" +
 	"\fPushStateAck\x12\x1a\n" +
-	"\breceived\x18\x01 \x01(\bR\breceived\"\x83\x01\n" +
+	"\breceived\x18\x01 \x01(\bR\breceived\"\xdf\x02\n" +
 	"\fRaftRpcEvent\x12\x1b\n" +
 	"\tfrom_node\x18\x01 \x01(\tR\bfromNode\x12\x17\n" +
 	"\ato_node\x18\x02 \x01(\tR\x06toNode\x12\x19\n" +
 	"\brpc_type\x18\x03 \x01(\tR\arpcType\x12\"\n" +
-	"\revent_time_ms\x18\x04 \x01(\x03R\veventTimeMs\"(\n" +
+	"\revent_time_ms\x18\x04 \x01(\x03R\veventTimeMs\x12\x15\n" +
+	"\x06rpc_id\x18\x05 \x01(\tR\x05rpcId\x12\x17\n" +
+	"\x04term\x18\x06 \x01(\x03H\x00R\x04term\x88\x01\x01\x12&\n" +
+	"\fcandidate_id\x18\a \x01(\tH\x01R\vcandidateId\x88\x01\x01\x12&\n" +
+	"\fvote_granted\x18\b \x01(\bH\x02R\vvoteGranted\x88\x01\x01\x12!\n" +
+	"\tdirection\x18\t \x01(\tH\x03R\tdirection\x88\x01\x01B\a\n" +
+	"\x05_termB\x0f\n" +
+	"\r_candidate_idB\x0f\n" +
+	"\r_vote_grantedB\f\n" +
+	"\n" +
+	"_direction\"(\n" +
 	"\n" +
 	"PushRpcAck\x12\x1a\n" +
 	"\breceived\x18\x01 \x01(\bR\breceived*O\n" +
@@ -2108,6 +2158,7 @@ func file_raft_proto_init() {
 		return
 	}
 	file_raft_proto_msgTypes[22].OneofWrappers = []any{}
+	file_raft_proto_msgTypes[24].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

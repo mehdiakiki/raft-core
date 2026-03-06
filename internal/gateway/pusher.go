@@ -49,19 +49,35 @@ func (p *Pusher) OnStateChange(snapshot raft.StateSnapshot) {
 }
 
 func (p *Pusher) OnRpcSend(event raft.RpcEvent) {
-	p.pushRpc(event, "SEND")
+	p.pushRpc(event)
 }
 
 func (p *Pusher) OnRpcReceive(event raft.RpcEvent) {
-	p.pushRpc(event, "RECEIVE")
+	// Canonical stream: emit outgoing RPCs only.
+	// Receive-side observer callbacks are still useful for local diagnostics but
+	// are intentionally not pushed to the gateway to avoid duplicate animations.
+	_ = event
 }
 
-func (p *Pusher) pushRpc(event raft.RpcEvent, direction string) {
+func (p *Pusher) pushRpc(event raft.RpcEvent) {
 	rpcEvent := &pb.RaftRpcEvent{
 		FromNode:    event.FromNode,
 		ToNode:      event.ToNode,
 		RpcType:     event.RpcType,
 		EventTimeMs: event.EventTime.UnixMilli(),
+		RpcId:       event.RpcID,
+	}
+	if event.HasTerm {
+		rpcEvent.Term = ptrInt64(event.Term)
+	}
+	if event.CandidateID != "" {
+		rpcEvent.CandidateId = ptrString(event.CandidateID)
+	}
+	if event.VoteGranted != nil {
+		rpcEvent.VoteGranted = event.VoteGranted
+	}
+	if event.Direction != "" {
+		rpcEvent.Direction = ptrString(event.Direction)
 	}
 
 	go func() {
@@ -72,7 +88,7 @@ func (p *Pusher) pushRpc(event raft.RpcEvent, direction string) {
 		if err != nil {
 			slog.Debug("gateway RPC push failed",
 				"node", p.nodeID,
-				"direction", direction,
+				"direction", event.Direction,
 				"from", event.FromNode,
 				"to", event.ToNode,
 				"type", event.RpcType,

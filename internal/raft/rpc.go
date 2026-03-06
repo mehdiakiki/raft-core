@@ -25,16 +25,36 @@ func (n *Node) RequestVote(args RequestVoteArgs) RequestVoteReply {
 
 	// Notify RPC observers of incoming request
 	n.rpcObservers.notifyReceive(RpcEvent{
-		FromNode:  args.CandidateID,
-		ToNode:    n.id,
-		RpcType:   "REQUEST_VOTE",
-		EventTime: time.Now(),
+		FromNode:    args.CandidateID,
+		ToNode:      n.id,
+		RpcType:     "REQUEST_VOTE",
+		RpcID:       requestVoteRPCID(args.Term, args.CandidateID, n.id),
+		EventTime:   time.Now(),
+		Term:        args.Term,
+		HasTerm:     true,
+		CandidateID: args.CandidateID,
 	})
+
+	emitVoteReply := func(reply RequestVoteReply) {
+		n.rpcObservers.notifySend(RpcEvent{
+			FromNode:    n.id,
+			ToNode:      args.CandidateID,
+			RpcType:     "VOTE_REPLY",
+			RpcID:       voteReplyRPCID(args.Term, n.id, args.CandidateID),
+			EventTime:   time.Now(),
+			Term:        args.Term,
+			HasTerm:     true,
+			CandidateID: args.CandidateID,
+			VoteGranted: boolPtr(reply.VoteGranted),
+		})
+	}
 
 	// Dead nodes ignore all RPCs.
 	if n.state == Dead {
 		slog.Debug("RequestVote ignored: node is dead", "id", n.id)
-		return RequestVoteReply{}
+		reply := RequestVoteReply{Term: n.currentTerm}
+		emitVoteReply(reply)
+		return reply
 	}
 
 	reply := RequestVoteReply{Term: n.currentTerm}
@@ -56,6 +76,7 @@ func (n *Node) RequestVote(args RequestVoteArgs) RequestVoteReply {
 		)
 		reply.Term = n.currentTerm
 		n.notifyStateChange()
+		emitVoteReply(reply)
 		return reply
 	}
 
@@ -91,6 +112,7 @@ func (n *Node) RequestVote(args RequestVoteArgs) RequestVoteReply {
 
 	reply.Term = n.currentTerm
 	n.notifyStateChange()
+	emitVoteReply(reply)
 	return reply
 }
 
@@ -115,7 +137,10 @@ func (n *Node) AppendEntries(args AppendEntriesArgs) AppendEntriesReply {
 		FromNode:  args.LeaderID,
 		ToNode:    n.id,
 		RpcType:   "APPEND_ENTRIES",
+		RpcID:     appendEntriesRPCID(args.Term, args.LeaderID, n.id, 0),
 		EventTime: time.Now(),
+		Term:      args.Term,
+		HasTerm:   true,
 	})
 
 	if n.state == Dead {

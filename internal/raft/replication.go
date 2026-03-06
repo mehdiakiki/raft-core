@@ -59,7 +59,10 @@ func (n *Node) replicateToPeer(peerID string, peer Peer, leaderTerm int64, heart
 		FromNode:  n.id,
 		ToNode:    peerID,
 		RpcType:   "APPEND_ENTRIES",
+		RpcID:     appendEntriesRPCID(leaderTerm, n.id, peerID, heartbeatRound),
 		EventTime: time.Now(),
+		Term:      leaderTerm,
+		HasTerm:   true,
 	})
 
 	// Send the AppendEntries RPC.

@@ -266,6 +266,11 @@ message RaftRpcEvent {
   string to_node = 2;         // recipient node ID
   string rpc_type = 3;        // "APPEND_ENTRIES", "REQUEST_VOTE", etc.
   int64 event_time_ms = 4;    // Unix milliseconds
+  string rpc_id = 5;          // stable logical RPC identifier
+  optional int64 term = 6;    // term associated with this RPC
+  optional string candidate_id = 7; // candidate for vote RPCs
+  optional bool vote_granted = 8;   // vote result for VOTE_REPLY RPCs
+  optional string direction = 9;    // SEND or RECEIVE (gateway may emit canonical SEND only)
 }
 
 message PushRpcAck {

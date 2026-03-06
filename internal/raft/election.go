@@ -59,10 +59,14 @@ func (n *Node) startElection(ctx context.Context) {
 		go func(pid string) {
 			// Notify observers of outgoing RPC
 			n.rpcObservers.notifySend(RpcEvent{
-				FromNode:  n.id,
-				ToNode:    pid,
-				RpcType:   "REQUEST_VOTE",
-				EventTime: time.Now(),
+				FromNode:    n.id,
+				ToNode:      pid,
+				RpcType:     "REQUEST_VOTE",
+				RpcID:       requestVoteRPCID(term, n.id, pid),
+				EventTime:   time.Now(),
+				Term:        term,
+				HasTerm:     true,
+				CandidateID: n.id,
 			})
 
 			peer := n.peers[pid]
@@ -94,6 +98,19 @@ func (n *Node) startElection(ctx context.Context) {
 func (n *Node) processVoteReply(peerID string, electionTerm int64, reply RequestVoteReply) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
+
+	// Notify observers of incoming vote reply.
+	n.rpcObservers.notifyReceive(RpcEvent{
+		FromNode:    peerID,
+		ToNode:      n.id,
+		RpcType:     "VOTE_REPLY",
+		RpcID:       voteReplyRPCID(electionTerm, peerID, n.id),
+		EventTime:   time.Now(),
+		Term:        electionTerm,
+		HasTerm:     true,
+		CandidateID: n.id,
+		VoteGranted: boolPtr(reply.VoteGranted),
+	})
 
 	// §5.1: A higher term means we are outdated. Step down.
 	if reply.Term > n.currentTerm {
